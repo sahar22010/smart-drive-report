@@ -1,101 +1,98 @@
 import streamlit as st
 import matplotlib.pyplot as plt
 from fpdf import FPDF
-import random
-from datetime import datetime
 import smtplib
-from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+import random
+import os
 
-# -------------------------- العنوان --------------------------
-st.set_page_config(page_title="Smart Drive Report", layout="centered")
-st.title("🚗 Smart Drive Report Generator")
+# -------- إعدادات الإيميل --------
+SENDER_EMAIL = "smartdrive.report@gmail.com"
+APP_PASSWORD = "owjj okgp ljbl gztg"
 
-# -------------------------- إدخال الإيميل --------------------------
-user_email = st.text_input("Enter your email to receive your driving report:")
+# -------- توليد رسم بياني --------
+def create_chart():
+    categories = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
+    values = [random.randint(60, 140), random.randint(50, 100), random.randint(40, 100), random.randint(0, 100), random.randint(0, 100)]
+    colors = ['#1f77b4', '#2ca02c', '#ff7f0e', '#d62728', '#9467bd']
 
-# -------------------------- توليد بيانات عشوائية --------------------------
-if st.button("Generate Report"):
-    if user_email:
-        st.success("Generating your smart driving report...")
+    fig, ax = plt.subplots()
+    ax.bar(categories, values, color=colors)
+    ax.set_title('Driving Behavior Summary')
+    ax.set_ylim([0, 150])
+    chart_path = "chart.png"
+    fig.savefig(chart_path)
+    plt.close(fig)
+    return chart_path, values
 
-        # بيانات عشوائية للسواقة
-        speed = random.randint(60, 140)
-        focus = random.randint(50, 100)
-        calmness = random.randint(40, 100)
-        aggression = 100 - calmness
-        distraction = 100 - focus
+# -------- توليد PDF التقرير --------
+def generate_pdf(values, style="Energetic", tip="Take short breaks to stay focused."):
+    chart_path, _ = create_chart()
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=14)
+    pdf.cell(200, 10, txt="🚗 Smart Driving Report - July 2025", ln=True, align="C")
+    pdf.ln(5)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=f"Speed: {values[0]} km/h", ln=True)
+    pdf.cell(200, 10, txt=f"Focus: {values[1]}%", ln=True)
+    pdf.cell(200, 10, txt=f"Calmness: {values[2]}%", ln=True)
+    pdf.cell(200, 10, txt=f"Aggression: {values[3]}%", ln=True)
+    pdf.cell(200, 10, txt=f"Distraction: {values[4]}%", ln=True)
+    pdf.cell(200, 10, txt=f"Style: {style}", ln=True)
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, txt=f"Tip: {tip}")
+    pdf.ln(5)
+    pdf.image(chart_path, x=30, w=150)
+    pdf.ln(5)
+    pdf.cell(200, 10, txt="By: Sahar Jamal", ln=True, align='C')
+    pdf.cell(200, 10, txt="Note: This is a prototype based on random data.", ln=True, align='C')
+    pdf.output("driving_report.pdf")
 
-        # رسم بياني
-        fig, ax = plt.subplots()
-        categories = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
-        values = [speed, focus, calmness, aggression, distraction]
-        bar_colors = ['#1f77b4', '#2ca02c', '#ff7f0e', '#d62728', '#9467bd']
-        ax.bar(categories, values, color=bar_colors)
-        ax.set_ylim([0, 150])
-        ax.set_title('Driving Behavior Overview')
-        st.pyplot(fig)
+# -------- إرسال الإيميل مع المرفق --------
+def send_email(to_email):
+    message = MIMEMultipart()
+    message["From"] = SENDER_EMAIL
+    message["To"] = to_email
+    message["Subject"] = "🚗 Your SmartDrive Report is Here!"
 
-        # -------------------------- نصيحة حسب النسب --------------------------
-        advice = ""
-        if aggression > 70:
-            advice += "- Try to stay calm while driving. High aggression affects safety.\n"
-        if distraction > 50:
-            advice += "- Reduce distractions. Focus is key to safe driving.\n"
-        if speed > 120:
-            advice += "- You're driving too fast! Consider slowing down.\n"
-        if not advice:
-            advice = "Great job! Keep driving safely and mindfully."
+    body = """
+Hey there!
 
-        st.info("Advice:\n" + advice)
+Here's your personalized driving report. Hope you enjoy the insights 🚗✨
 
-        # -------------------------- توليد PDF --------------------------
-        try:
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=12)
-            pdf.cell(200, 10, txt="Smart Drive Report", ln=True, align='C')
-            pdf.cell(200, 10, txt=f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True, align='C')
-            pdf.ln(10)
-            pdf.cell(200, 10, txt=f"Speed: {speed} km/h", ln=True)
-            pdf.cell(200, 10, txt=f"Focus: {focus}%", ln=True)
-            pdf.cell(200, 10, txt=f"Calmness: {calmness}%", ln=True)
-            pdf.cell(200, 10, txt=f"Aggression: {aggression}%", ln=True)
-            pdf.cell(200, 10, txt=f"Distraction: {distraction}%", ln=True)
-            pdf.ln(10)
-            pdf.multi_cell(0, 10, txt="Advice:\n" + advice)
+Stay safe & drive smart,
+– Sahar Jamal
+    """
+    message.attach(MIMEText(body, "plain"))
 
-            pdf_path = "/tmp/drive_report.pdf"
-            pdf.output(pdf_path)
+    with open("driving_report.pdf", "rb") as f:
+        part = MIMEApplication(f.read(), Name="Driving_Report.pdf")
+        part['Content-Disposition'] = 'attachment; filename="Driving_Report.pdf"'
+        message.attach(part)
 
-            with open(pdf_path, "rb") as file:
-                file_data = file.read()
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(SENDER_EMAIL, APP_PASSWORD)
+        server.send_message(message)
 
-            # -------------------------- إرسال إيميل --------------------------
-            email = EmailMessage()
-            email['Subject'] = 'Your Smart Drive Report'
-            email['From'] = 'smartdrive.report@gmail.com'  # عدلها لإيميلك الصحيح
-            email['To'] = user_email
-            email.set_content("Attached is your smart driving behavior report. Stay safe! 🚗")
-            email.add_attachment(file_data, maintype='application', subtype='pdf', filename="drive_report.pdf")
+# -------- واجهة Streamlit --------
+st.set_page_config(page_title="SmartDrive Report", layout="centered")
+st.title("🚗 SmartDrive Report")
+st.markdown("<p style='text-align: center;'>By: <b>Sahar Jamal</b><br>This is a prototype based on random data</p>", unsafe_allow_html=True)
+st.markdown("Enter your email below to get your colorful smart driving report 🎨📩")
 
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-                smtp.login('smartdrive.report@gmail.com', 'owjj okgp ljbl gztg')  # غير كلمة السر هنا
-                smtp.send_message(email)
+email = st.text_input("Your Email")
 
-            st.success("📩 Report sent successfully to your email!")
-
-        except Exception as e:
-            st.error(f"PDF generation error: {e}")
-
+if st.button("Send My Report"):
+    if email:
+        chart_path, values = create_chart()
+        generate_pdf(values)
+        send_email(email)
+        st.success("✅ Sent! Check your email for the report.")
     else:
-        st.warning("Please enter a valid email address.")
-
-# -------------------------- التوقيع --------------------------
-st.markdown("---")
-st.markdown(
-    "<p style='text-align: center; font-size: 16px;'>🚗💡 By <b>Sahar Jamal</b></p>",
-    unsafe_allow_html=True
-)
+        st.error("⚠ Please enter a valid email.")
 
 # -------------------------- ملاحظة --------------------------
 st.markdown(

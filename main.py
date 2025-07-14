@@ -87,9 +87,9 @@ email = st.text_input("Your Email")
 
 if st.button("Send My Report"):
     if email:
-    chart_path, values = create_chart()
-    generate_pdf(chart_path, values)
-    send_email(email)
+        chart_path, values = create_chart()
+        generate_pdf(chart_path, values)
+        send_email(email)
         st.success("✅ Sent! Check your email for the report.")
     else:
         st.error("⚠ Please enter a valid email.")

@@ -5,155 +5,92 @@ import random
 from datetime import datetime
 import smtplib
 from email.message import EmailMessage
-import traceback
 
-# Page configuration
-st.set_page_config(
-    page_title="SmartDrive - Smart Driving Report",
-    page_icon="🚗",
-    layout="centered"
+# -------------------------- العنوان --------------------------
+st.set_page_config(page_title="Smart Drive Report", layout="centered")
+st.title("🚗 Smart Drive Report Generator")
+
+# -------------------------- إدخال الإيميل --------------------------
+user_email = st.text_input("Enter your email to receive your driving report:")
+
+# -------------------------- توليد بيانات عشوائية --------------------------
+if st.button("Generate Report"):
+    if user_email:
+        st.success("Generating your smart driving report...")
+
+        # بيانات عشوائية للسواقة
+        speed = random.randint(60, 140)
+        focus = random.randint(50, 100)
+        calmness = random.randint(40, 100)
+        aggression = 100 - calmness
+        distraction = 100 - focus
+
+        # رسم بياني
+        fig, ax = plt.subplots()
+        categories = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
+        values = [speed, focus, calmness, aggression, distraction]
+        bar_colors = ['#1f77b4', '#2ca02c', '#ff7f0e', '#d62728', '#9467bd']
+        ax.bar(categories, values, color=bar_colors)
+        ax.set_ylim([0, 150])
+        ax.set_title('Driving Behavior Overview')
+        st.pyplot(fig)
+
+        # -------------------------- نصيحة حسب النسب --------------------------
+        advice = ""
+        if aggression > 70:
+            advice += "- Try to stay calm while driving. High aggression affects safety.\n"
+        if distraction > 50:
+            advice += "- Reduce distractions. Focus is key to safe driving.\n"
+        if speed > 120:
+            advice += "- You're driving too fast! Consider slowing down.\n"
+        if not advice:
+            advice = "Great job! Keep driving safely and mindfully."
+
+        st.info("Advice:\n" + advice)
+
+        # -------------------------- توليد PDF --------------------------
+        try:
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Arial", size=12)
+            pdf.cell(200, 10, txt="Smart Drive Report", ln=True, align='C')
+            pdf.cell(200, 10, txt=f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True, align='C')
+            pdf.ln(10)
+            pdf.cell(200, 10, txt=f"Speed: {speed} km/h", ln=True)
+            pdf.cell(200, 10, txt=f"Focus: {focus}%", ln=True)
+            pdf.cell(200, 10, txt=f"Calmness: {calmness}%", ln=True)
+            pdf.cell(200, 10, txt=f"Aggression: {aggression}%", ln=True)
+            pdf.cell(200, 10, txt=f"Distraction: {distraction}%", ln=True)
+            pdf.ln(10)
+            pdf.multi_cell(0, 10, txt="Advice:\n" + advice)
+            pdf.output("/mnt/data/drive_report.pdf")
+
+            with open("/mnt/data/drive_report.pdf", "rb") as file:
+                file_data = file.read()
+
+            # -------------------------- إرسال إيميل --------------------------
+            email = EmailMessage()
+            email['Subject'] = 'Your Smart Drive Report'
+            email['From'] = 'smartdrive.report.bot@gmail.com'
+            email['To'] = user_email
+            email.set_content("Attached is your smart driving behavior report. Stay safe! 🚗")
+            email.add_attachment(file_data, maintype='application', subtype='pdf', filename="drive_report.pdf")
+
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+                smtp.login('smartdrive.report.bot@gmail.com', 'your-app-password')
+                smtp.send_message(email)
+
+            st.success("📩 Report sent successfully to your email!")
+
+        except Exception as e:
+            st.error(f"PDF generation error: {e}")
+
+    else:
+        st.warning("Please enter a valid email address.")
+
+# -------------------------- التوقيع --------------------------
+st.markdown("---")
+st.markdown(
+    "<p style='text-align: center; font-size: 16px;'>🚗💡 By <b>Sahar Jamal</b></p>",
+    unsafe_allow_html=True
 )
-
-# Generate random driving metrics
-def generate_metrics():
-    return {
-        "Smart Driving": random.randint(60, 100),
-        "Smooth Turns": random.randint(40, 100),
-        "Safe Stops": random.randint(50, 100),
-        "Focus While Driving": random.randint(30, 100),
-        "Speed Compliance": random.randint(70, 100),
-        "Fuel Efficiency": random.randint(50, 100)
-    }
-
-# Create charts
-def create_charts(metrics):
-    try:
-        # Pie chart
-        fig1, ax1 = plt.subplots(figsize=(6, 6))
-        ax1.pie(metrics.values(), labels=metrics.keys(), autopct='%1.1f%%',
-                colors=['#08F7FE', '#FE53BB', '#F5D300', '#00ff00', '#9d4edd', '#ff6d00'])
-        st.pyplot(fig1)
-
-        # Bar chart
-        fig2, ax2 = plt.subplots(figsize=(8, 4))
-        bars = ax2.bar(metrics.keys(), metrics.values(), 
-                      color=['#08F7FE', '#FE53BB', '#F5D300', '#00ff00', '#9d4edd', '#ff6d00'])
-        ax2.set_ylim(0, 110)
-        for bar in bars:
-            height = bar.get_height()
-            ax2.text(bar.get_x() + bar.get_width()/2., height, f'{height}%', 
-                    ha='center', va='bottom')
-        st.pyplot(fig2)
-    except Exception as e:
-        st.error(f"Chart generation error: {str(e)}")
-
-# Generate PDF report
-def generate_pdf(metrics, tip):
-    try:
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", 'B', 24)
-        pdf.cell(0, 15, "SmartDrive - Smart Driving Report", ln=True, align='C')
-
-        pdf.set_font("Arial", '', 16)
-        pdf.cell(0, 10, "Prototype - Simulated Data", ln=True, align='C')
-        pdf.ln(15)
-
-        pdf.set_font("Arial", 'B', 18)
-        pdf.cell(0, 10, "Results:", ln=True)
-
-        pdf.set_font("Arial", '', 14)
-        for key, value in metrics.items():
-            pdf.cell(0, 10, f"{key}: {value}%", ln=True)
-
-        pdf.ln(10)
-        pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 10, "Tip:", ln=True)
-        pdf.set_font("Arial", '', 14)
-        pdf.multi_cell(0, 10, tip)
-
-        pdf.ln(10)
-        pdf.set_font("Arial", 'I', 12)
-        pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True)
-
-        return pdf.output(dest="S").encode("latin1")
-    except Exception as e:
-        st.error(f"PDF generation error: {str(e)}")
-        return None
-
-# Send the PDF report via email
-def send_email(receiver_email, pdf_bytes):
-    try:
-        sender_email = "smartdrive.report@gmail.com"
-        sender_password = "owjj okgp ljbl gztg"  # App password
-
-        if not sender_email or sender_password == "your_app_password_here":
-            raise ValueError("❗ Email settings not completed")
-
-        msg = EmailMessage()
-        msg['Subject'] = "SmartDrive Report"
-        msg['From'] = sender_email
-        msg['To'] = receiver_email
-        msg.set_content("""
-        Hello,
-
-        Please find attached your smart driving report.
-        Thank you for using SmartDrive! 🚗
-        """)
-
-        msg.add_attachment(
-            pdf_bytes,
-            maintype='application',
-            subtype='pdf',
-            filename="smartdrive_report.pdf"
-        )
-
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-            smtp.login(sender_email, sender_password)
-            smtp.send_message(msg)
-        return True
-    except Exception as e:
-        st.error(f"❌ Failed to send: {str(e)}")
-        st.text(traceback.format_exc())
-        return False
-
-# Main Streamlit UI
-def main():
-    st.title("🚗 SmartDrive - Smart Driving Report")
-
-    with st.form("report_form"):
-        user_email = st.text_input("📧 Enter your email:")
-        submitted = st.form_submit_button("🎯 Generate Report")
-
-        if submitted:
-            if not user_email:
-                st.warning("⚠ Please enter a valid email address.")
-            else:
-                with st.spinner("Generating your report..."):
-                    try:
-                        metrics = generate_metrics()
-                        weakest = min(metrics, key=metrics.get)
-                        tip = f"Tip: Focus on improving {weakest} ({metrics[weakest]}%)"
-
-                        st.subheader("📊 Results")
-                        create_charts(metrics)
-
-                        st.subheader("💡 Tip")
-                        st.success(tip)
-
-                        pdf_bytes = generate_pdf(metrics, tip)
-                        if pdf_bytes:
-                            st.download_button(
-                                label="⬇ Download PDF",
-                                data=pdf_bytes,
-                                file_name="smartdrive_report.pdf",
-                                mime="application/pdf"
-                            )
-
-                            if send_email(user_email, pdf_bytes):
-                                st.success(f"✅ Report sent to: {user_email}")
-                    except Exception as e:
-                        st.error(f"An error occurred: {str(e)}")
-
-if __name__== "__main__":
-    main()

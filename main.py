@@ -33,7 +33,7 @@ def generate_pdf(values, style="Energetic", tip="Take short breaks to stay focus
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=14)
-    pdf.cell(200, 10, txt="🚗 Smart Driving Report - July 2025", ln=True, align="C")
+    pdf.cell(200, 10, txt="Smart Driving Report - July 2025", ln=True, align="C")
     pdf.ln(5)
     pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt=f"Speed: {values[0]} km/h", ln=True)

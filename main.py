@@ -63,21 +63,23 @@ if st.button("Generate Report"):
             pdf.cell(200, 10, txt=f"Distraction: {distraction}%", ln=True)
             pdf.ln(10)
             pdf.multi_cell(0, 10, txt="Advice:\n" + advice)
-            pdf.output("/mnt/data/drive_report.pdf")
 
-            with open("/mnt/data/drive_report.pdf", "rb") as file:
+            pdf_path = "/tmp/drive_report.pdf"
+            pdf.output(pdf_path)
+
+            with open(pdf_path, "rb") as file:
                 file_data = file.read()
 
             # -------------------------- إرسال إيميل --------------------------
             email = EmailMessage()
             email['Subject'] = 'Your Smart Drive Report'
-            email['From'] = 'smartdrive.report.bot@gmail.com'
+            email['From'] = 'smartdrive.report@gmail.com'  # عدلها لإيميلك الصحيح
             email['To'] = user_email
             email.set_content("Attached is your smart driving behavior report. Stay safe! 🚗")
             email.add_attachment(file_data, maintype='application', subtype='pdf', filename="drive_report.pdf")
 
             with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-                smtp.login('smartdrive.report.bot@gmail.com', 'your-app-password')
+                smtp.login('smartdrive.report@gmail.com', 'owjj okgp ljbl gztg')  # غير كلمة السر هنا
                 smtp.send_message(email)
 
             st.success("📩 Report sent successfully to your email!")
@@ -92,5 +94,13 @@ if st.button("Generate Report"):
 st.markdown("---")
 st.markdown(
     "<p style='text-align: center; font-size: 16px;'>🚗💡 By <b>Sahar Jamal</b></p>",
+    unsafe_allow_html=True
+)
+
+# -------------------------- ملاحظة --------------------------
+st.markdown(
+    "<p style='text-align: center; font-size: 12px; color: gray;'>"
+    "This is a preliminary project based on random data."
+    "</p>",
     unsafe_allow_html=True
 )

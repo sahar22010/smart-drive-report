@@ -155,5 +155,5 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {str(e)}")
 
-if _name_ == "_main_":
+if __name__== "__main__":
     main()

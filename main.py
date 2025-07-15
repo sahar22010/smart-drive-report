@@ -140,7 +140,7 @@ This is a prototype using random data for demonstration purposes.
     
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login("smartdrive.report@gmail.com","owjj okgp ljbl gztg")
-                     server.send_message(message)
+        server.send_message(message)
 
 # واجهة Streamlit
 def main():

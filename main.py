@@ -9,36 +9,19 @@ import random
 import os
 import numpy as np
 from matplotlib.patches import Circle
-import requests
 
 # إعدادات الإيميل
 SENDER_EMAIL = "smartdrive.report@gmail.com"
 APP_PASSWORD = "owjj okgp ljbl gztg"  # استبدليه بكلمة مرور التطبيق الخاصة بك
 
-def download_font():
-    # ✅ رابط الخط الثابت الصحيح
-    font_url = "https://github.com/notofonts/noto-fonts/raw/main/unhinted/ttf/NotoKufiArabic/NotoKufiArabic-Regular.ttf"
-    font_path = "NotoKufiArabic-Regular.ttf"
-
-    if not os.path.exists(font_path):
-        try:
-            response = requests.get(font_url)
-            with open(font_path, "wb") as f:
-                f.write(response.content)
-            st.success("تم تحميل الخط العربي بنجاح ✅")
-        except Exception as e:
-            st.error(f"فشل تحميل الخط العربي: {str(e)}")
-            return False
-    return True
-
 def create_chart(values):
-    categories_ar = ['السرعة', 'التركيز', 'الهدوء', 'العدوانية', 'التشتت']
+    categories_en = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
     colors = ['#1f77b4', '#2ca02c', '#ff7f0e', '#d62728', '#9467bd']
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
-    bars = ax1.bar(categories_ar, values, color=colors)
-    ax1.set_title('ملخص سلوك القيادة / Driving Behavior Summary', fontsize=12)
+    bars = ax1.bar(categories_en, values, color=colors)
+    ax1.set_title('Driving Behavior Summary', fontsize=12)
     ax1.set_ylim([0, 150])
 
     for bar in bars:
@@ -53,7 +36,7 @@ def create_chart(values):
     ax2.add_patch(circle)
     ax2.text(0.5, 0.5, f'{overall_score:.0f}%',
              ha='center', va='center', fontsize=24, fontweight='bold')
-    ax2.set_title('النسبة الكلية / Overall Score', fontsize=12)
+    ax2.set_title('Overall Score', fontsize=12)
     ax2.axis('off')
 
     plt.tight_layout()
@@ -62,80 +45,72 @@ def create_chart(values):
     plt.close(fig)
     return chart_path, overall_score
 
-def generate_driving_tip(score):
-    tips_ar = {
-        'high': "أحسنت! أداؤك في القيادة ممتاز. حافظ على هذه المستويات العالية من التركيز والهدوء.",
-        'medium': "أداؤك جيد ولكن هناك مجال للتحسين. حاول زيادة مستوى تركيزك وتقليل التشتت.",
-        'low': "هناك حاجة لتحسين أدائك في القيادة. ركز أكثر على الطريق وحاول تقليل العدوانية."
-    }
-
-    tips_en = {
-        'high': "Excellent! Your driving performance is outstanding. Maintain these high levels.",
-        'medium': "Good performance but there's room for improvement. Try to increase your focus.",
-        'low': "Your driving performance needs improvement. Focus more on the road."
-    }
-
+def get_driving_tip_paragraph(score):
     if score > 80:
-        return tips_ar['high'], tips_en['high']
+        return (
+            "Your driving behavior is impressive! You're showing great awareness and control on the road. "
+            "Maintaining this level of calmness and focus will help keep you and others safe. "
+            "Continue driving attentively, stay patient with traffic, and avoid distractions. "
+            "Excellent job — keep it up!"
+        )
     elif score > 50:
-        return tips_ar['medium'], tips_en['medium']
+        return (
+            "Your driving performance is good, but there's room for improvement. Try to stay more focused, "
+            "especially in busy traffic. Reducing distractions and avoiding sudden reactions can greatly enhance your control. "
+            "Stay aware of your surroundings, and always aim for smoother decisions on the road."
+        )
     else:
-        return tips_ar['low'], tips_en['low']
+        return (
+            "Your driving shows that you need to be more careful. It's important to reduce distractions and control your reactions. "
+            "Try to stay calm, avoid aggressive moves, and focus entirely on the road. Improving your attention and behavior will make you a much safer and more confident driver."
+        )
+
+def get_tip_list():
+    return [
+        "Stay focused and avoid distractions like phones.",
+        "Keep both hands on the wheel.",
+        "Slow down in busy or unfamiliar areas.",
+        "Be patient with other drivers.",
+        "Avoid sudden lane changes or harsh braking.",
+        "Always wear your seatbelt.",
+        "Take breaks if you feel tired.",
+    ]
 
 def generate_pdf(chart_path, values, overall_score):
     pdf = FPDF()
-     # ✅ هذا السطر هو اللي يصلح مشكلة الخط العربي
-
-    # ✅ استخدام الخط الثابت الجديد
-    font_added = False
-    try:
-        pdf.add_font('NotoArabic', '', 'NotoKufiArabic-Regular.ttf', uni=True)
-        font_added = True
-    except Exception as e:
-        st.warning(f"فشل تحميل الخط العربي داخل PDF: {e}")
-
     pdf.add_page()
 
-    # العنوان
-    if font_added:
-        pdf.set_font('NotoArabic', '', 16)
-        pdf.cell(0, 10, 'تقرير القيادة الذكية', 0, 1, 'C')
-    pdf.set_font('Helvetica', '', 16)
-    pdf.cell(0, 10, 'SmartDrive Report', 0, 1, 'C')
+    # الصفحة الأولى
+    pdf.set_font("Helvetica", size=18)
+    pdf.cell(0, 15, "SmartDrive Report", ln=True, align='C')
     pdf.ln(10)
 
-    # البيانات
-    if font_added:
-        pdf.set_font('NotoArabic', '', 12)
-        pdf.cell(0, 10, f'السرعة: {values[0]} كم/ساعة', 0, 1)
-        pdf.cell(0, 10, f'التركيز: {values[1]}%', 0, 1)
-
-    pdf.set_font('Helvetica', '', 12)
-    pdf.cell(0, 10, f'Speed: {values[0]} km/h', 0, 1)
-    pdf.cell(0, 10, f'Focus: {values[1]}%', 0, 1)
+    pdf.set_font("Helvetica", size=14)
+    pdf.cell(0, 10, f"Speed: {values[0]} km/h", ln=True)
+    pdf.cell(0, 10, f"Focus: {values[1]}%", ln=True)
+    pdf.cell(0, 10, f"Calmness: {values[2]}%", ln=True)
+    pdf.cell(0, 10, f"Aggression: {values[3]}%", ln=True)
+    pdf.cell(0, 10, f"Distraction: {values[4]}%", ln=True)
     pdf.ln(10)
 
-    # الرسم البياني
     pdf.image(chart_path, x=10, w=190)
     pdf.ln(10)
 
-    # النصائح
-    tip_ar, tip_en = generate_driving_tip(overall_score)
-    if font_added:
-        pdf.set_font('NotoArabic', '', 12)
-        pdf.multi_cell(0, 8, tip_ar)
-        pdf.ln(5)
-    pdf.set_font('Helvetica', '', 12)
-    pdf.multi_cell(0, 8, tip_en)
-    pdf.ln(10)
+    # الصفحة الثانية
+    pdf.add_page()
+    pdf.set_font("Helvetica", size=18)
+    pdf.set_text_color(0, 91, 187)  # لون أزرق
+    pdf.multi_cell(0, 10, get_driving_tip_paragraph(overall_score))
+    pdf.ln(8)
 
-    # ملاحظة ختامية
-    pdf.set_text_color(128, 128, 128)
-    if font_added:
-        pdf.set_font('NotoArabic', '', 10)
-        pdf.cell(0, 10, 'هذا نموذج أولي يعتمد على بيانات عشوائية', 0, 1, 'C')
-    pdf.set_font('Helvetica', '', 10)
-    pdf.cell(0, 10, 'This is a prototype using random data', 0, 1, 'C')
+    pdf.set_font("Helvetica", size=14)
+    pdf.set_text_color(0, 0, 0)  # لون أسود
+    pdf.cell(0, 10, "Tips to Improve:", ln=True)
+
+    pdf.set_font("Helvetica", size=13)
+    for tip in get_tip_list():
+        pdf.cell(5)
+        pdf.cell(0, 10, f"- {tip}", ln=True)
 
     pdf.output("driving_report.pdf")
 
@@ -143,16 +118,16 @@ def send_email(to_email):
     message = MIMEMultipart()
     message["From"] = SENDER_EMAIL
     message["To"] = to_email
-    message["Subject"] = "تقرير القيادة الذكية / SmartDrive Report"
+    message["Subject"] = "SmartDrive Report"
 
     body = """
-مرحباً / Hello,
+Hello,
 
-تقرير القيادة الذكية الخاص بك مرفق بهذه الرسالة. 
 Your SmartDrive report is attached to this email.
+Wishing you safe and smart driving!
 
-مع تحياتي / Best regards,
-سحر جمال / Sahar Jamal
+Best regards,
+Sahar Jamal
 """
     message.attach(MIMEText(body, "plain"))
 
@@ -167,9 +142,6 @@ Your SmartDrive report is attached to this email.
 
 def main():
     st.set_page_config(page_title="تقرير القيادة الذكية", layout="centered")
-
-    if not download_font():
-        st.warning("قد لا تظهر النصوص العربية بشكل صحيح بدون الخط المطلوب")
 
     st.title("🚗 تقرير القيادة الذكية / SmartDrive Report")
 
@@ -193,14 +165,12 @@ def main():
                 random.randint(0, 100),
                 random.randint(0, 100)
             ]
-
             chart_path, overall_score = create_chart(values)
             generate_pdf(chart_path, values, overall_score)
             send_email(email)
-
-            st.success("✅ تم الإرسال بنجاح! / Sent successfully!")
+            st.success("✅ Report sent successfully!")
         else:
-            st.error("⚠ يرجى إدخال بريد صحيح / Please enter a valid email")
+            st.error("⚠ Please enter a valid email.")
 
-if __name__== "__main__":
+if __name__ == "__main__":
     main()

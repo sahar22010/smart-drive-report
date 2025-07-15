@@ -6,25 +6,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 import random
-import os
 import numpy as np
 from matplotlib.patches import Circle
-import requests
 
-# Email settings
+# Email settings (replace with your actual credentials)
 SENDER_EMAIL = "smartdrive.report@gmail.com"
-APP_PASSWORD = "your_app_password_here"  # Replace with your actual password
-
-def setup_fonts():
-    """Download required fonts automatically"""
-    # Download standard Arial font if not exists
-    if not os.path.exists('arial.ttf'):
-        try:
-            url = "https://github.com/Hamagrael/Windows-Fonts/raw/main/Arial.ttf"
-            r = requests.get(url, allow_redirects=True)
-            open('arial.ttf', 'wb').write(r.content)
-        except:
-            st.warning("Could not download English font")
+APP_PASSWORD = "‏owjj okgp ljbl gztg" 
 
 def create_chart(values):
     categories = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
@@ -32,8 +19,9 @@ def create_chart(values):
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
+    # Bar chart
     bars = ax1.bar(categories, values, color=colors)
-    ax1.set_title('Driving Behavior Summary', fontsize=12)
+    ax1.set_title('Driving Performance', fontsize=14, pad=20)
     ax1.set_ylim([0, 150])
     
     for bar in bars:
@@ -42,13 +30,14 @@ def create_chart(values):
                  f'{height}%',
                  ha='center', va='bottom', fontsize=10)
     
+    # Score circle
     overall_score = np.mean(values)
     color = '#2ca02c' if overall_score > 70 else '#ff7f0e' if overall_score > 40 else '#d62728'
     circle = Circle((0.5, 0.5), 0.4, fill=False, linewidth=10, color=color)
     ax2.add_patch(circle)
     ax2.text(0.5, 0.5, f'{overall_score:.0f}%', 
              ha='center', va='center', fontsize=24, fontweight='bold')
-    ax2.set_title('Overall Score', fontsize=12)
+    ax2.set_title('Overall Score', fontsize=14, pad=20)
     ax2.axis('off')
     
     plt.tight_layout()
@@ -57,156 +46,130 @@ def create_chart(values):
     plt.close(fig)
     return chart_path, overall_score
 
-def generate_driving_tip(score):
-    tips = {
-        'high': "EXCELLENT DRIVING!\n\nYour driving performance is outstanding. "
-                "Maintain these high levels of focus and calmness.\n\n"
-                "• Keep safe following distance\n"
-                "• Take regular breaks every 2 hours\n"
-                "• Stay aware of your surroundings",
-        'medium': "GOOD DRIVING\n\nYour performance is decent but has room for improvement.\n\n"
-                 "• Increase your focus on the road\n"
-                 "• Reduce distractions\n"
-                 "• Practice defensive driving techniques\n"
-                 "• Maintain safe distance from other vehicles",
-        'low': "NEEDS IMPROVEMENT\n\nYour driving performance requires attention.\n\n"
-              "• Focus more on the road ahead\n"
-              "• Reduce aggressive maneuvers\n"
-              "• Avoid sudden acceleration/braking\n"
-              "• Minimize distractions\n"
-              "• Take a driving refresher course"
-    }
-    
+def generate_tip(score):
     if score > 80:
-        return tips['high']
+        return (
+            "EXCELLENT DRIVING!\n\n"
+            "• Maintain your high focus levels\n"
+            "• Keep safe following distance\n"
+            "• Take breaks every 2 hours\n"
+            "• Stay aware of surroundings\n\n"
+            "You're setting a great example for safe driving!"
+        )
     elif score > 50:
-        return tips['medium']
+        return (
+            "GOOD DRIVING\n\n"
+            "• Reduce minor distractions\n"
+            "• Practice smooth acceleration\n"
+            "• Check mirrors frequently\n"
+            "• Anticipate other drivers' actions\n\n"
+            "With small improvements, you'll reach excellent level!"
+        )
     else:
-        return tips['low']
+        return (
+            "NEEDS IMPROVEMENT\n\n"
+            "• Reduce aggressive maneuvers\n"
+            "• Minimize phone usage\n"
+            "• Maintain steady speed\n"
+            "• Increase following distance\n\n"
+            "Consider taking a defensive driving course."
+        )
 
-def generate_pdf(chart_path, values, overall_score):
+def create_pdf(chart_path, values, overall_score):
     pdf = FPDF()
     
-    # Setup fonts - using standard Arial
-    try:
-        pdf.add_font('Arial', '', 'arial.ttf', uni=True)
-        font_name = 'Arial'
-    except:
-        # Fallback to built-in font if Arial not available
-        font_name = 'Arial'
-    
-    # First page - Summary
+    # Page 1 - Summary
     pdf.add_page()
-    pdf.set_font(font_name, 'B', 24)
+    pdf.set_font('Arial', 'B', 24)
     pdf.cell(0, 15, 'SMART DRIVE REPORT', 0, 1, 'C')
     pdf.ln(10)
     
-    pdf.set_font(font_name, 'B', 16)
-    pdf.cell(0, 10, 'DRIVING PERFORMANCE SUMMARY', 0, 1)
-    pdf.ln(5)
-    
-    # Metrics
-    pdf.set_font(font_name, '', 14)
+    pdf.set_font('Arial', '', 14)
     pdf.cell(0, 8, f'Speed: {values[0]} km/h', 0, 1)
     pdf.cell(0, 8, f'Focus: {values[1]}%', 0, 1)
     pdf.cell(0, 8, f'Calmness: {values[2]}%', 0, 1)
     pdf.cell(0, 8, f'Aggression: {values[3]}%', 0, 1)
     pdf.cell(0, 8, f'Distraction: {values[4]}%', 0, 1)
-    pdf.ln(10)
+    pdf.ln(15)
     
-    # Chart
     pdf.image(chart_path, x=10, w=190)
     pdf.ln(15)
     
-    # Second page - Detailed Tips
+    # Page 2 - Tips
     pdf.add_page()
-    pdf.set_font(font_name, 'B', 18)
+    pdf.set_font('Arial', 'B', 18)
     pdf.cell(0, 10, 'PERSONALIZED DRIVING TIPS', 0, 1)
     pdf.ln(10)
     
-    # Driving tip (bigger font)
-    tip = generate_driving_tip(overall_score)
-    pdf.set_font(font_name, '', 14)  # Larger font for better readability
-    pdf.multi_cell(0, 8, tip)
-    pdf.ln(15)
+    pdf.set_font('Arial', '', 14)  # Larger font for readability
+    pdf.multi_cell(0, 8, generate_tip(overall_score))
     
-    # Footer note
-    pdf.set_text_color(128, 128, 128)
-    pdf.set_font(font_name, 'I', 10)
-    pdf.cell(0, 10, 'Note: This is a prototype using simulated data', 0, 1, 'C')
-    pdf.cell(0, 10, 'Generated by SmartDrive Analytics', 0, 1, 'C')
-    
-    pdf.output("driving_report.pdf")
+    pdf.output("report.pdf")
     return True
 
 def send_email(to_email):
-    message = MIMEMultipart()
-    message["From"] = SENDER_EMAIL
-    message["To"] = to_email
-    message["Subject"] = "Your SmartDrive Report is Ready!"
+    msg = MIMEMultipart()
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = to_email
+    msg['Subject'] = "Your SmartDrive Report"
     
     body = """
-Hello,
+Hi there,
 
-Your personalized SmartDrive report is attached. 
+Your personalized driving report is attached.
 
-This report contains:
-- Your driving performance analysis
-- Personalized tips for improvement
-- Visual summary of your metrics
+This includes:
+- Your driving performance scores
+- Detailed analysis
+- Personalized improvement tips
 
 Drive safe!
 The SmartDrive Team
 """
-    message.attach(MIMEText(body, "plain"))
+    msg.attach(MIMEText(body, 'plain'))
     
-    with open("driving_report.pdf", "rb") as f:
-        part = MIMEApplication(f.read(), Name="SmartDrive_Report.pdf")
-        part['Content-Disposition'] = 'attachment; filename="SmartDrive_Report.pdf"'
-        message.attach(part)
+    with open("report.pdf", "rb") as f:
+        attach = MIMEApplication(f.read(), _subtype="pdf")
+        attach.add_header('Content-Disposition', 'attachment', filename="report.pdf")
+        msg.attach(attach)
     
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.login(SENDER_EMAIL, APP_PASSWORD)
-        server.send_message(message)
+        server.send_message(msg)
 
 def main():
-    st.set_page_config(page_title="SmartDrive Report", layout="centered")
-    
-    # Setup required fonts
-    setup_fonts()
-    
+    st.set_page_config(page_title="SmartDrive", layout="centered")
     st.title("🚗 SmartDrive Analytics")
+    
     st.markdown("""
-    <p style='text-align: center;'>
+    <p style='text-align:center;'>
     Get your personalized driving report<br>
-    <span style='color: gray; font-size: 14px;'>
-    Note: This prototype uses simulated data
+    <span style='color:gray; font-size:14px;'>
+    Prototype version - uses simulated data
     </span>
     </p>
     """, unsafe_allow_html=True)
     
     email = st.text_input("Your Email Address")
     
-    if st.button("Generate My Report"):
-        if email:
-            # Generate random driving data
+    if st.button("Generate Report"):
+        if "@" in email and "." in email:
             values = [
-                random.randint(60, 140),  # Speed
-                random.randint(50, 100),  # Focus
-                random.randint(40, 100),  # Calmness
-                random.randint(0, 100),   # Aggression
-                random.randint(0, 100)    # Distraction
+                random.randint(60, 140),
+                random.randint(50, 100),
+                random.randint(40, 100),
+                random.randint(0, 100),
+                random.randint(0, 100)
             ]
             
-            # Create report
-            chart_path, overall_score = create_chart(values)
-            if generate_pdf(chart_path, values, overall_score):
+            chart_path, score = create_chart(values)
+            if create_pdf(chart_path, values, score):
                 send_email(email)
-                st.success("✅ Report sent successfully! Check your email.")
+                st.success("✅ Report sent! Check your email.")
             else:
-                st.error("❌ Failed to generate report. Please try again.")
+                st.error("Failed to generate report")
         else:
-            st.error("⚠ Please enter a valid email address")
+            st.warning("Please enter a valid email")
 
 
 if __name__ == "__main__":

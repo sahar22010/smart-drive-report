@@ -9,9 +9,9 @@ import random
 import numpy as np
 from matplotlib.patches import Circle
 
-# Email settings
+# إعدادات الإيميل
 SENDER_EMAIL = "smartdrive.report@gmail.com"
-APP_PASSWORD = "owjj okgp ljbl gztg"  # Replace with your actual password
+APP_PASSWORD = "owjj okgp ljbl gztg"  # استبدلها بكلمة المرور الفعلية
 
 def create_chart(values):
     categories = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
@@ -19,7 +19,6 @@ def create_chart(values):
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
-    # Bar chart
     bars = ax1.bar(categories, values, color=colors)
     ax1.set_title('Driving Performance', fontsize=14, pad=20)
     ax1.set_ylim([0, 150])
@@ -30,7 +29,6 @@ def create_chart(values):
                  f'{height}%',
                  ha='center', va='bottom', fontsize=10)
     
-    # Score circle
     overall_score = np.mean(values)
     color = '#2ca02c' if overall_score > 70 else '#ff7f0e' if overall_score > 40 else '#d62728'
     circle = Circle((0.5, 0.5), 0.4, fill=False, linewidth=10, color=color)
@@ -50,28 +48,28 @@ def generate_tip(score):
     if score > 80:
         return (
             "EXCELLENT DRIVING!\n\n"
-            "• You're in the top 10% of drivers!\n"
-            "• Maintain your perfect focus\n"
-            "• Keep this safe driving pattern\n"
-            "• Take breaks every 2 hours\n\n"
+            "- You're in the top 10% of drivers!\n"
+            "- Maintain your perfect focus\n"
+            "- Keep this safe driving pattern\n"
+            "- Take breaks every 2 hours\n\n"
             "Advice: Share your skills with others!"
         )
     elif score > 50:
         return (
             "GOOD PERFORMANCE\n\n"
-            "• Slightly reduce distractions\n"
-            "• Improve smooth acceleration\n"
-            "• Check mirrors more frequently\n"
-            "• Anticipate other drivers' moves\n\n"
+            "- Slightly reduce distractions\n"
+            "- Improve smooth acceleration\n"
+            "- Check mirrors more frequently\n"
+            "- Anticipate other drivers' moves\n\n"
             "Advice: Small tweaks will make you excellent!"
         )
     else:
         return (
             "NEEDS IMPROVEMENT\n\n"
-            "• Reduce aggressive maneuvers\n"
-            "• Eliminate phone usage\n"
-            "• Maintain steady speed\n"
-            "• Increase following distance\n\n"
+            "- Reduce aggressive maneuvers\n"
+            "- Eliminate phone usage\n"
+            "- Maintain steady speed\n"
+            "- Increase following distance\n\n"
             "Advice: Consider a defensive driving course."
         )
 
@@ -102,7 +100,8 @@ def create_pdf(chart_path, values, overall_score):
     pdf.ln(10)
     
     pdf.set_font('Arial', '', 14)
-    pdf.multi_cell(0, 8, generate_tip(overall_score))
+    tip = generate_tip(overall_score)
+    pdf.multi_cell(0, 8, tip)
     
     pdf.ln(15)
     pdf.set_font('Arial', 'I', 10)
@@ -112,7 +111,7 @@ def create_pdf(chart_path, values, overall_score):
         pdf.output("driving_report.pdf")
         return True
     except Exception as e:
-        st.error(f"Failed to generate PDF: {str(e)}")
+        st.error(f"Error generating PDF: {str(e)}")
         return False
 
 def send_email(to_email):
@@ -168,7 +167,6 @@ def main():
     
     if st.button("Generate My Report"):
         if "@" in email and "." in email:
-            # Generate random driving data
             values = [
                 random.randint(60, 140),
                 random.randint(50, 100),
@@ -184,7 +182,7 @@ def main():
                 else:
                     st.error("Failed to send email")
             else:
-                st.error("Failed to generate report")
+                st.error("Failed to generate PDF")
         else:
             st.warning("Please enter a valid email address")
     

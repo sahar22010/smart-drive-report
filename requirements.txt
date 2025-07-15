@@ -1,5 +1,4 @@
 streamlit
 matplotlib
-fpdf2
+fpdf
 numpy
-requests

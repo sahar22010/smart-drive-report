@@ -10,11 +10,10 @@ import os
 import numpy as np
 from matplotlib.patches import Circle
 
-# إعدادات الإيميل
+# Email settings (replace with your actual credentials)
 SENDER_EMAIL = "smartdrive.report@gmail.com"
-APP_PASSWORD = "owjj okgp ljbl gztg"  # يجب تغييرها في الإنتاج الحقيقي
+APP_PASSWORD = "owjj okgp ljbl gztg"
 
-# دالة لإنشاء الرسم البياني
 def create_chart(values):
     categories_ar = ['السرعة', 'التركيز', 'الهدوء', 'العدوانية', 'التشتت']
     categories_en = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
@@ -22,7 +21,6 @@ def create_chart(values):
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
-    # الرسم البياني
     bars = ax1.bar(categories_ar, values, color=colors)
     ax1.set_title('ملخص سلوك القيادة / Driving Behavior Summary', fontsize=12)
     ax1.set_ylim([0, 150])
@@ -33,7 +31,6 @@ def create_chart(values):
                  f'{height}%',
                  ha='center', va='bottom', fontsize=10)
     
-    # دائرة الأداء
     overall_score = np.mean(values)
     color = '#2ca02c' if overall_score > 70 else '#ff7f0e' if overall_score > 40 else '#d62728'
     circle = Circle((0.5, 0.5), 0.4, fill=False, linewidth=10, color=color)
@@ -49,7 +46,6 @@ def create_chart(values):
     plt.close(fig)
     return chart_path, overall_score
 
-# دالة النصائح
 def generate_driving_tip(score):
     tips_ar = {
         'high': "أحسنت! أداؤك في القيادة ممتاز. حافظ على هذه المستويات العالية من التركيز والهدوء.",
@@ -70,25 +66,24 @@ def generate_driving_tip(score):
     else:
         return tips_ar['low'], tips_en['low']
 
-# دالة إنشاء PDF
 def generate_pdf(chart_path, values, overall_score):
     pdf = FPDF()
     
-    # إضافة الخطوط
+    # Add fonts
     pdf.add_font('NotoArabic', '', 'NotoKufiArabic-Regular.ttf', uni=True)
     pdf.add_font('Arial', '', 'arial.ttf', uni=True)
     
-    # الصفحة الرئيسية
+    # Add page
     pdf.add_page()
     
-    # العنوان
+    # Title
     pdf.set_font('NotoArabic', '', 16)
     pdf.cell(0, 10, 'تقرير القيادة الذكية', 0, 1, 'C')
     pdf.set_font('Arial', '', 16)
     pdf.cell(0, 10, 'SmartDrive Report', 0, 1, 'C')
     pdf.ln(10)
     
-    # البيانات
+    # Data
     pdf.set_font('NotoArabic', '', 12)
     pdf.cell(0, 10, f'السرعة: {values[0]} كم/ساعة', 0, 1)
     pdf.cell(0, 10, f'التركيز: {values[1]}%', 0, 1)
@@ -98,11 +93,11 @@ def generate_pdf(chart_path, values, overall_score):
     pdf.cell(0, 10, f'Focus: {values[1]}%', 0, 1)
     pdf.ln(10)
     
-    # الصورة
+    # Chart image
     pdf.image(chart_path, x=10, w=190)
     pdf.ln(10)
     
-    # النصائح
+    # Tips
     tip_ar, tip_en = generate_driving_tip(overall_score)
     pdf.set_font('NotoArabic', '', 12)
     pdf.multi_cell(0, 8, tip_ar)
@@ -111,9 +106,79 @@ def generate_pdf(chart_path, values, overall_score):
     pdf.multi_cell(0, 8, tip_en)
     pdf.ln(10)
     
-    # الملاحظة
+    # Footer note
     pdf.set_text_color(128, 128, 128)
     pdf.set_font('NotoArabic', '', 10)
     pdf.cell(0, 10, 'هذا نموذج أولي يعتمد على بيانات عشوائية', 0, 1, 'C')
     pdf.set_font('Arial', '', 10)
-    pdf.
+    pdf.cell(0, 10, 'This is a prototype using random data', 0, 1, 'C')
+    
+    pdf.output("driving_report.pdf")
+
+def send_email(to_email):
+    message = MIMEMultipart()
+    message["From"] = SENDER_EMAIL
+    message["To"] = to_email
+    message["Subject"] = "تقرير القيادة الذكية / SmartDrive Report"
+    
+    body = """
+مرحباً / Hello,
+
+تقرير القيادة الذكية الخاص بك مرفق بهذه الرسالة. 
+Your SmartDrive report is attached to this email.
+
+مع تحياتي / Best regards,
+سحر جمال / Sahar Jamal
+"""
+    message.attach(MIMEText(body, "plain"))
+    
+    with open("driving_report.pdf", "rb") as f:
+        part = MIMEApplication(f.read(), Name="SmartDrive_Report.pdf")
+        part['Content-Disposition'] = 'attachment; filename="SmartDrive_Report.pdf"'
+        message.attach(part)
+    
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(SENDER_EMAIL, APP_PASSWORD)
+        server.send_message(message)
+
+def main():
+    st.set_page_config(page_title="تقرير القيادة الذكية", layout="centered")
+    
+    # Download Arabic font if not exists
+    if not os.path.exists('NotoKufiArabic-Regular.ttf'):
+        st.warning("جارٍ تحميل الخطوط...")
+        os.system('wget -O NotoKufiArabic-Regular.ttf https://fonts.google.com/download?family=Noto%20Kufi%20Arabic')
+    
+    st.title("🚗 تقرير القيادة الذكية / SmartDrive Report")
+    
+    st.markdown("""
+    <p style='text-align: center;'>
+    بواسطة: <b>سحر جمال</b> / By: <b>Sahar Jamal</b><br>
+    <span style='color: gray; font-size: 14px;'>
+    ملاحظة: هذا نموذج أولي يعتمد على بيانات عشوائية
+    </span>
+    </p>
+    """, unsafe_allow_html=True)
+    
+    email = st.text_input("بريدك الإلكتروني / Your Email")
+    
+    if st.button("إرسال التقرير / Send Report"):
+        if email:
+            values = [
+                random.randint(60, 140),
+                random.randint(50, 100),
+                random.randint(40, 100),
+                random.randint(0, 100),
+                random.randint(0, 100)
+            ]
+            
+            chart_path, overall_score = create_chart(values)
+            generate_pdf(chart_path, values, overall_score)
+            send_email(email)
+            
+            st.success("✅ تم الإرسال بنجاح! / Sent successfully!")
+        else:
+            st.error("⚠ يرجى إدخال بريد صحيح / Please enter a valid email")
+
+if __name__== "__main__":
+    main()

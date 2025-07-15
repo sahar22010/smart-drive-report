@@ -11,19 +11,17 @@ from matplotlib.patches import Circle
 import sqlite3
 from datetime import datetime
 
-# إعدادات الإيميل - استبدلها ببياناتك
+# Email settings - replace with your credentials
 SENDER_EMAIL = "smartdrive.report@gmail.com"
 APP_PASSWORD = "owjj okgp ljbl gztg"
 
-# ------ تسجيل الزوار ------
+# ------ Visitor Tracking ------
 def init_db():
     conn = sqlite3.connect('visitors.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS visitors
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   visit_time TIMESTAMP,
-                  visitor_ip TEXT,
-                  user_agent TEXT,
                   email TEXT)''')
     conn.commit()
     conn.close()
@@ -42,42 +40,27 @@ def log_visit(email=None):
 
 init_db()
 
-# ------ واجهة التطبيق ------
+# ------ App Interface ------
 st.set_page_config(page_title="SmartDrive Report", layout="centered")
 
 # Header Section
 st.markdown("""
 <h1 style='text-align: center; color: #2E86C1; margin-bottom: 5px;'>
-🚗 SmartDrive – AI-Powered Driving Behavior Report
+🚗 SmartDrive – AI-Powered Driving Analysis
 </h1>
-<p style='text-align: center; font-size: 18px; color: #5D6D7E; margin-top: 5px;'>
+<p style='text-align: center; font-size: 20px; color: #5D6D7E; margin-top: 5px;'>
 Know your drive. Improve it.
 </p>
 """, unsafe_allow_html=True)
 
-# Info Box
-st.markdown("""
-<div style='border: 2px solid #2E86C1; padding: 15px; border-radius: 8px; 
-            background-color: #F4F6F7; color: #154360; font-size: 16px;
-            margin-bottom: 25px;'>
-<b>SmartDrive</b> combines data science and AI to give you smart insights into your driving behavior. 
-Save time, drive smarter, and become a better driver.<br><br>
-
-This is just the beginning. In the future, I aim to develop this project into a real system that can 
-be applied nationwide using surveillance cameras to monitor driving and prevent dangerous behavior — 
-starting from this prototype based on random data. The goal is to protect lives and improve road 
-safety across all communities.
-</div>
-""", unsafe_allow_html=True)
-
-# ------ الوظائف الأساسية ------
+# ------ Core Functions ------
 def create_chart(values):
     categories = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
     colors = ['#1f77b4', '#2ca02c', '#ff7f0e', '#d62728', '#9467bd']
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
-    # الرسم البياني
+    # Bar chart
     bars = ax1.bar(categories, values, color=colors)
     ax1.set_title('Driving Performance', fontsize=14, pad=20)
     ax1.set_ylim([0, 150])
@@ -88,7 +71,7 @@ def create_chart(values):
                  f'{height}%',
                  ha='center', va='bottom', fontsize=10)
     
-    # دائرة الأداء
+    # Score circle
     overall_score = np.mean(values)
     color = '#2ca02c' if overall_score > 70 else '#ff7f0e' if overall_score > 40 else '#d62728'
     circle = Circle((0.5, 0.5), 0.4, fill=False, linewidth=10, color=color)
@@ -136,7 +119,7 @@ def generate_tip(score):
 def create_pdf(chart_path, values, overall_score):
     pdf = FPDF()
     
-    # الصفحة الأولى
+    # Page 1 - Summary
     pdf.add_page()
     pdf.set_font('Arial', 'B', 24)
     pdf.cell(0, 15, 'SMART DRIVE REPORT', 0, 1, 'C')
@@ -153,7 +136,7 @@ def create_pdf(chart_path, values, overall_score):
     pdf.image(chart_path, x=10, w=190)
     pdf.ln(15)
     
-    # الصفحة الثانية
+    # Page 2 - Tips
     pdf.add_page()
     pdf.set_font('Arial', 'B', 18)
     pdf.cell(0, 10, 'PERSONALIZED DRIVING TIPS', 0, 1)
@@ -199,35 +182,12 @@ Drive safely!
         server.login(SENDER_EMAIL, APP_PASSWORD)
         server.send_message(msg)
 
-# ------ إحصاءات الزوار ------
-def show_stats():
-    try:
-        conn = sqlite3.connect('visitors.db')
-        c = conn.cursor()
-        c.execute("SELECT COUNT(*) FROM visitors")
-        total_visits = c.fetchone()[0]
-        
-        c.execute("SELECT COUNT(*) FROM visitors WHERE email IS NOT NULL")
-        reports_sent = c.fetchone()[0]
-        conn.close()
-        
-        st.sidebar.markdown("---")
-        st.sidebar.markdown("### Project Stats")
-        st.sidebar.markdown(f"📊 Total Visits: *{total_visits}*")
-        st.sidebar.markdown(f"📨 Reports Sent: *{reports_sent}*")
-        st.sidebar.markdown("""
-        <small>Developed by <b>Sahar Jamal</b><br>
-        AI-powered road safety solution</small>
-        """, unsafe_allow_html=True)
-    except:
-        pass
-
-# ------ الواجهة الرئيسية ------
+# ------ Main Interface ------
 email = st.text_input("Your Email Address")
 
 if st.button("Generate My Report"):
     if "@" in email and "." in email:
-        # توليد بيانات عشوائية
+        # Generate random driving data
         values = [
             random.randint(60, 140),  # Speed
             random.randint(50, 100),  # Focus
@@ -239,23 +199,31 @@ if st.button("Generate My Report"):
         chart_path, score = create_chart(values)
         if create_pdf(chart_path, values, score):
             send_email(email)
-            log_visit(email)  # تسجيل الزيارة مع الإيميل
+            log_visit(email)
             st.success("✅ Report sent successfully! Check your email.")
         else:
             st.error("❌ Failed to generate report")
     else:
         st.warning("⚠ Please enter a valid email address")
 
-# تسجيل الزيارة بدون إيميل (عند فتح الصفحة فقط)
-log_visit()
+# Project description below the button
+st.markdown("""
+<div style='margin-top: 30px; padding: 15px; background-color: #F8F9F9; border-radius: 8px;'>
+<p style='font-size: 16px; color: #2E86C1;'>
+This is just the beginning. In the future, I aim to develop this project into a real system that can be applied nationwide using surveillance cameras to monitor driving and prevent dangerous behavior — starting from this prototype based on random data.
+</p>
+<p style='font-size: 16px; color: #2E86C1;'>
+The goal is to protect lives and improve road safety across all communities.
+</p>
+</div>
+""", unsafe_allow_html=True)
 
-# عرض الإحصاءات
-show_stats()
+# Track page view
+log_visit()
 
 # Footer
 st.markdown("""
 <p style='text-align:center; font-size: 14px; color: #7F8C8D; margin-top: 50px;'>
-By: <b>Sahar Jamal</b> | Prototype for demonstration purposes
+Developed by Sahar Jamal | AI Road Safety Prototype
 </p>
 """, unsafe_allow_html=True)
-

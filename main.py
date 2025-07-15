@@ -189,5 +189,5 @@ def main():
         else:
             st.error("⚠ يرجى إدخال بريد إلكتروني صالح. / Please enter a valid email address.")
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()

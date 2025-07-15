@@ -11,50 +11,29 @@ import numpy as np
 from matplotlib.patches import Circle
 import requests
 
-# إعدادات الإيميل
+# Email settings
 SENDER_EMAIL = "smartdrive.report@gmail.com"
-APP_PASSWORD = "owjj okgp ljbl gztg"  # استبدلها بكلمة المرور الفعلية
+APP_PASSWORD = "your_app_password_here"  # Replace with your actual password
 
 def setup_fonts():
-    """تحميل الخطوط المطلوبة تلقائياً"""
-    # تحميل الخط العربي إذا لم يكن موجوداً
-    arabic_font = "NotoKufiArabic-Regular.ttf"
-    if not os.path.exists(arabic_font):
+    """Download required fonts automatically"""
+    # Download standard Arial font if not exists
+    if not os.path.exists('arial.ttf'):
         try:
-            url = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoKufiArabic/NotoKufiArabic-Regular.ttf"
+            url = "https://github.com/Hamagrael/Windows-Fonts/raw/main/Arial.ttf"
             r = requests.get(url, allow_redirects=True)
-            open(arabic_font, 'wb').write(r.content)
+            open('arial.ttf', 'wb').write(r.content)
         except:
-            st.warning("تعذر تحميل الخط العربي")
-
-    # استخدام خط Arial المدمج في النظام
-    arial_font = "arial.ttf"
-    if not os.path.exists(arial_font):
-        try:
-            # روابط بديلة لخط Arial
-            arial_urls = [
-                "https://github.com/unicode-org/missing-emoji-fonts/raw/main/fonts/Adobe/ARIALUNI.TTF",
-                "https://github.com/Hamagrael/Windows-Fonts/raw/main/Arial.ttf"
-            ]
-            for url in arial_urls:
-                try:
-                    r = requests.get(url, allow_redirects=True)
-                    open(arial_font, 'wb').write(r.content)
-                    break
-                except:
-                    continue
-        except:
-            st.warning("تعذر تحميل الخط الإنجليزي")
+            st.warning("Could not download English font")
 
 def create_chart(values):
-    categories_ar = ['السرعة', 'التركيز', 'الهدوء', 'العدوانية', 'التشتت']
-    categories_en = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
+    categories = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
     colors = ['#1f77b4', '#2ca02c', '#ff7f0e', '#d62728', '#9467bd']
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
-    bars = ax1.bar(categories_ar, values, color=colors)
-    ax1.set_title('ملخص سلوك القيادة / Driving Behavior Summary', fontsize=12)
+    bars = ax1.bar(categories, values, color=colors)
+    ax1.set_title('Driving Behavior Summary', fontsize=12)
     ax1.set_ylim([0, 150])
     
     for bar in bars:
@@ -69,7 +48,7 @@ def create_chart(values):
     ax2.add_patch(circle)
     ax2.text(0.5, 0.5, f'{overall_score:.0f}%', 
              ha='center', va='center', fontsize=24, fontweight='bold')
-    ax2.set_title('النسبة الكلية / Overall Score', fontsize=12)
+    ax2.set_title('Overall Score', fontsize=12)
     ax2.axis('off')
     
     plt.tight_layout()
@@ -79,94 +58,83 @@ def create_chart(values):
     return chart_path, overall_score
 
 def generate_driving_tip(score):
-    tips_ar = {
-        'high': "أحسنت! أداؤك في القيادة ممتاز. حافظ على هذه المستويات العالية من التركيز والهدوء.",
-        'medium': "أداؤك جيد ولكن هناك مجال للتحسين. حاول زيادة مستوى تركيزك وتقليل التشتت.",
-        'low': "هناك حاجة لتحسين أدائك في القيادة. ركز أكثر على الطريق وحاول تقليل العدوانية."
-    }
-    
-    tips_en = {
-        'high': "Excellent! Your driving performance is outstanding. Maintain these high levels.",
-        'medium': "Good performance but there's room for improvement. Try to increase your focus.",
-        'low': "Your driving performance needs improvement. Focus more on the road."
+    tips = {
+        'high': "EXCELLENT DRIVING!\n\nYour driving performance is outstanding. "
+                "Maintain these high levels of focus and calmness.\n\n"
+                "• Keep safe following distance\n"
+                "• Take regular breaks every 2 hours\n"
+                "• Stay aware of your surroundings",
+        'medium': "GOOD DRIVING\n\nYour performance is decent but has room for improvement.\n\n"
+                 "• Increase your focus on the road\n"
+                 "• Reduce distractions\n"
+                 "• Practice defensive driving techniques\n"
+                 "• Maintain safe distance from other vehicles",
+        'low': "NEEDS IMPROVEMENT\n\nYour driving performance requires attention.\n\n"
+              "• Focus more on the road ahead\n"
+              "• Reduce aggressive maneuvers\n"
+              "• Avoid sudden acceleration/braking\n"
+              "• Minimize distractions\n"
+              "• Take a driving refresher course"
     }
     
     if score > 80:
-        return tips_ar['high'], tips_en['high']
+        return tips['high']
     elif score > 50:
-        return tips_ar['medium'], tips_en['medium']
+        return tips['medium']
     else:
-        return tips_ar['low'], tips_en['low']
+        return tips['low']
 
 def generate_pdf(chart_path, values, overall_score):
     pdf = FPDF()
     
-    # إعداد الخطوط مع التعامل مع الأخطاء
-    arabic_font_available = False
-    arial_font_available = False
-    
-    try:
-        pdf.add_font('NotoArabic', '', 'NotoKufiArabic-Regular.ttf', uni=True)
-        arabic_font_available = True
-    except:
-        st.warning("لا يمكن تحميل الخط العربي، سيتم استخدام خط بديل")
-    
+    # Setup fonts - using standard Arial
     try:
         pdf.add_font('Arial', '', 'arial.ttf', uni=True)
-        arial_font_available = True
+        font_name = 'Arial'
     except:
-        try:
-            pdf.add_font('ArialUnicode', '', 'arial-unicode-ms.ttf', uni=True)
-            arial_font_available = True
-        except:
-            st.error("تعذر تحميل أي من الخطوط الإنجليزية")
-            return False
+        # Fallback to built-in font if Arial not available
+        font_name = 'Arial'
     
-    # إنشاء المحتوى
+    # First page - Summary
     pdf.add_page()
-    
-    # العنوان
-    if arabic_font_available:
-        pdf.set_font('NotoArabic', '', 16)
-        pdf.cell(0, 10, 'تقرير القيادة الذكية', 0, 1, 'C')
-    pdf.set_font('Arial' if arial_font_available else 'ArialUnicode', '', 16)
-    pdf.cell(0, 10, 'SmartDrive Report', 0, 1, 'C')
+    pdf.set_font(font_name, 'B', 24)
+    pdf.cell(0, 15, 'SMART DRIVE REPORT', 0, 1, 'C')
     pdf.ln(10)
     
-    # البيانات
-    if arabic_font_available:
-        pdf.set_font('NotoArabic', '', 12)
-        pdf.cell(0, 10, f'السرعة: {values[0]} كم/ساعة', 0, 1)
-        pdf.cell(0, 10, f'التركيز: {values[1]}%', 0, 1)
+    pdf.set_font(font_name, 'B', 16)
+    pdf.cell(0, 10, 'DRIVING PERFORMANCE SUMMARY', 0, 1)
+    pdf.ln(5)
     
-    pdf.set_font('Arial' if arial_font_available else 'ArialUnicode', '', 12)
-    pdf.cell(0, 10, f'Speed: {values[0]} km/h', 0, 1)
-    pdf.cell(0, 10, f'Focus: {values[1]}%', 0, 1)
+    # Metrics
+    pdf.set_font(font_name, '', 14)
+    pdf.cell(0, 8, f'Speed: {values[0]} km/h', 0, 1)
+    pdf.cell(0, 8, f'Focus: {values[1]}%', 0, 1)
+    pdf.cell(0, 8, f'Calmness: {values[2]}%', 0, 1)
+    pdf.cell(0, 8, f'Aggression: {values[3]}%', 0, 1)
+    pdf.cell(0, 8, f'Distraction: {values[4]}%', 0, 1)
     pdf.ln(10)
     
-    # الصورة
+    # Chart
     pdf.image(chart_path, x=10, w=190)
+    pdf.ln(15)
+    
+    # Second page - Detailed Tips
+    pdf.add_page()
+    pdf.set_font(font_name, 'B', 18)
+    pdf.cell(0, 10, 'PERSONALIZED DRIVING TIPS', 0, 1)
     pdf.ln(10)
     
-    # النصائح
-    tip_ar, tip_en = generate_driving_tip(overall_score)
-    if arabic_font_available:
-        pdf.set_font('NotoArabic', '', 12)
-        pdf.multi_cell(0, 8, tip_ar)
-        pdf.ln(5)
+    # Driving tip (bigger font)
+    tip = generate_driving_tip(overall_score)
+    pdf.set_font(font_name, '', 14)  # Larger font for better readability
+    pdf.multi_cell(0, 8, tip)
+    pdf.ln(15)
     
-    pdf.set_font('Arial' if arial_font_available else 'ArialUnicode', '', 12)
-    pdf.multi_cell(0, 8, tip_en)
-    pdf.ln(10)
-    
-    # الملاحظة
+    # Footer note
     pdf.set_text_color(128, 128, 128)
-    if arabic_font_available:
-        pdf.set_font('NotoArabic', '', 10)
-        pdf.cell(0, 10, 'هذا نموذج أولي يعتمد على بيانات عشوائية', 0, 1, 'C')
-    
-    pdf.set_font('Arial' if arial_font_available else 'ArialUnicode', '', 10)
-    pdf.cell(0, 10, 'This is a prototype using random data', 0, 1, 'C')
+    pdf.set_font(font_name, 'I', 10)
+    pdf.cell(0, 10, 'Note: This is a prototype using simulated data', 0, 1, 'C')
+    pdf.cell(0, 10, 'Generated by SmartDrive Analytics', 0, 1, 'C')
     
     pdf.output("driving_report.pdf")
     return True
@@ -175,16 +143,20 @@ def send_email(to_email):
     message = MIMEMultipart()
     message["From"] = SENDER_EMAIL
     message["To"] = to_email
-    message["Subject"] = "تقرير القيادة الذكية / SmartDrive Report"
+    message["Subject"] = "Your SmartDrive Report is Ready!"
     
     body = """
-مرحباً / Hello,
+Hello,
 
-تقرير القيادة الذكية الخاص بك مرفق بهذه الرسالة. 
-Your SmartDrive report is attached to this email.
+Your personalized SmartDrive report is attached. 
 
-مع تحياتي / Best regards,
-سحر جمال / Sahar Jamal
+This report contains:
+- Your driving performance analysis
+- Personalized tips for improvement
+- Visual summary of your metrics
+
+Drive safe!
+The SmartDrive Team
 """
     message.attach(MIMEText(body, "plain"))
     
@@ -198,43 +170,43 @@ Your SmartDrive report is attached to this email.
         server.send_message(message)
 
 def main():
-    st.set_page_config(page_title="تقرير القيادة الذكية", layout="centered")
+    st.set_page_config(page_title="SmartDrive Report", layout="centered")
     
-    # تحميل الخطوط المطلوبة
+    # Setup required fonts
     setup_fonts()
     
-    st.title("🚗 تقرير القيادة الذكية / SmartDrive Report")
-    
+    st.title("🚗 SmartDrive Analytics")
     st.markdown("""
     <p style='text-align: center;'>
-    بواسطة: <b>سحر جمال</b> / By: <b>Sahar Jamal</b><br>
+    Get your personalized driving report<br>
     <span style='color: gray; font-size: 14px;'>
-    ملاحظة: هذا نموذج أولي يعتمد على بيانات عشوائية<br>
-    Note: This is a prototype using random data
+    Note: This prototype uses simulated data
     </span>
     </p>
     """, unsafe_allow_html=True)
     
-    email = st.text_input("بريدك الإلكتروني / Your Email")
+    email = st.text_input("Your Email Address")
     
-    if st.button("إرسال التقرير / Send Report"):
+    if st.button("Generate My Report"):
         if email:
+            # Generate random driving data
             values = [
-                random.randint(60, 140),
-                random.randint(50, 100),
-                random.randint(40, 100),
-                random.randint(0, 100),
-                random.randint(0, 100)
+                random.randint(60, 140),  # Speed
+                random.randint(50, 100),  # Focus
+                random.randint(40, 100),  # Calmness
+                random.randint(0, 100),   # Aggression
+                random.randint(0, 100)    # Distraction
             ]
             
+            # Create report
             chart_path, overall_score = create_chart(values)
             if generate_pdf(chart_path, values, overall_score):
                 send_email(email)
-                st.success("✅ تم إرسال التقرير بنجاح! / Report sent successfully!")
+                st.success("✅ Report sent successfully! Check your email.")
             else:
-                st.error("❌ فشل إنشاء التقرير / Failed to generate report")
+                st.error("❌ Failed to generate report. Please try again.")
         else:
-            st.error("⚠ يرجى إدخال بريد إلكتروني صالح. / Please enter a valid email address.")
+            st.error("⚠ Please enter a valid email address")
 
 
 if __name__ == "__main__":

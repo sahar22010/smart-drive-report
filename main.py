@@ -16,8 +16,8 @@ SENDER_EMAIL = "smartdrive.report@gmail.com"
 APP_PASSWORD = "owjj okgp ljbl gztg"  # Replace with your actual password
 
 def download_font():
-    font_url = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoKufiArabic/NotoKufiArabic-Regular.ttf"
-    font_path = "NotoKufiArabic-Regular.ttf"
+    font_url = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoKufiArabic/NotoKufiArabic-VariableFont_wght.ttf"
+    font_path = "NotoKufiArabic-VariableFont_wght.ttf"
     
     if not os.path.exists(font_path):
         try:
@@ -88,7 +88,7 @@ def generate_pdf(chart_path, values, overall_score):
     # Add fonts
     font_added = False
     try:
-        pdf.add_font('NotoArabic', '', 'NotoKufiArabic-Regular.ttf', uni=True)
+        pdf.add_font('NotoArabic', '', 'NotoKufiArabic-VariableFont_wght.ttf', uni=True)
         font_added = True
     except:
         st.warning("Using fallback font for Arabic text")
@@ -204,6 +204,5 @@ def main():
             st.success("✅ تم الإرسال بنجاح! / Sent successfully!")
         else:
             st.error("⚠ يرجى إدخال بريد صحيح / Please enter a valid email")
-
 if __name__== "__main__":
     main()

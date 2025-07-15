@@ -84,7 +84,7 @@ def generate_driving_tip(score):
 
 def generate_pdf(chart_path, values, overall_score):
     pdf = FPDF()
-    pdf.set_text_shaping(True)  # ✅ هذا السطر هو اللي يصلح مشكلة الخط العربي
+     # ✅ هذا السطر هو اللي يصلح مشكلة الخط العربي
 
     # ✅ استخدام الخط الثابت الجديد
     font_added = False

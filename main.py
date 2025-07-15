@@ -93,7 +93,7 @@ def generate_pdf(chart_path, values, overall_score):
     except:
         st.warning("Using fallback font for Arabic text")
     
-    pdf.add_font('Arial', '', 'arial.ttf', uni=True)
+    pdf.set_font('Helvetica', '', 12)  # أو أي حجم تبغينه
     
     # Add page
     pdf.add_page()

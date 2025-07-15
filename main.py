@@ -84,7 +84,18 @@ def generate_driving_tip(score):
 
 def generate_pdf(chart_path, values, overall_score):
     pdf = FPDF()
+    pdf.set_text_shaping(True)  # ✅ هذا السطر هو اللي يخلي الخط العربي يشتغل صح
 
+    # ✅ استخدام الخط الثابت الجديد
+    font_added = False
+    try:
+        pdf.add_font('NotoArabic', '', 'NotoKufiArabic-Regular.ttf', uni=True)
+        font_added = True
+    except Exception as e:
+        st.warning(f"فشل تحميل الخط العربي داخل PDF: {e}")
+
+    pdf.add_page()
+    ...
     # ✅ استخدام الخط الثابت الجديد
     font_added = False
     try:

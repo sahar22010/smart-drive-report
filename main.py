@@ -75,11 +75,11 @@ def generate_driving_tip(score):
 
 # دالة لإنشاء ملف PDF
 def generate_pdf(chart_path, values):
-    overall_score = np.mean(values)
-    tip_ar, tip_en = generate_driving_tip(overall_score)
-    
     pdf = FPDF()
-    pdf.add_page()
+    
+    # إعداد الخطوط
+    pdf.add_font('NotoKufiArabic', '', 'NotoKufiArabic-Regular.ttf', uni=True)
+    pdf.add_font('Arial', '', 'arial.ttf', uni=True)  # للإنجليزية
     
     # الصفحة العربية
     pdf.set_font('Arial', 'B', 16)

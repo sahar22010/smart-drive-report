@@ -81,8 +81,7 @@ def generate_driving_tip(score):
         return tips_ar['medium'], tips_en['medium']
     else:
         return tips_ar['low'], tips_en['low']
-
-def generate_pdf(chart_path, values, overall_score):
+    def generate_pdf(chart_path, values, overall_score):
     pdf = FPDF()
     pdf.set_text_shaping(True)  # ✅ هذا السطر هو اللي يخلي الخط العربي يشتغل صح
 

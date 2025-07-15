@@ -12,7 +12,7 @@ from matplotlib.patches import Circle
 
 # إعدادات الإيميل (يجب تغييرها لتناسب احتياجاتك)
 SENDER_EMAIL = "smartdrive.report@gmail.com"
-APP_PASSWORD = "your_app_password_here"  # استبدل بكلمة المرور الفعلية
+APP_PASSWORD = "owjj okgp ljbl gztg"  # استبدل بكلمة المرور الفعلية
 
 # دالة لإنشاء الرسم البياني مع دائرة الأداء
 def create_chart(values):

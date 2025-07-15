@@ -9,10 +9,26 @@ import random
 import os
 import numpy as np
 from matplotlib.patches import Circle
+import requests
 
-# Email settings (replace with your actual credentials)
+# Email settings
 SENDER_EMAIL = "smartdrive.report@gmail.com"
-APP_PASSWORD = "owjj okgp ljbl gztg"
+APP_PASSWORD = "owjj okgp ljbl gztg"  # Replace with your actual password
+
+def download_font():
+    font_url = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoKufiArabic/NotoKufiArabic-Regular.ttf"
+    font_path = "NotoKufiArabic-Regular.ttf"
+    
+    if not os.path.exists(font_path):
+        try:
+            response = requests.get(font_url)
+            with open(font_path, "wb") as f:
+                f.write(response.content)
+            st.success("تم تحميل الخط العربي بنجاح")
+        except Exception as e:
+            st.error(f"فشل تحميل الخط العربي: {str(e)}")
+            return False
+    return True
 
 def create_chart(values):
     categories_ar = ['السرعة', 'التركيز', 'الهدوء', 'العدوانية', 'التشتت']
@@ -70,23 +86,31 @@ def generate_pdf(chart_path, values, overall_score):
     pdf = FPDF()
     
     # Add fonts
-    pdf.add_font('NotoArabic', '', 'NotoKufiArabic-Regular.ttf', uni=True)
+    font_added = False
+    try:
+        pdf.add_font('NotoArabic', '', 'NotoKufiArabic-Regular.ttf', uni=True)
+        font_added = True
+    except:
+        st.warning("Using fallback font for Arabic text")
+    
     pdf.add_font('Arial', '', 'arial.ttf', uni=True)
     
     # Add page
     pdf.add_page()
     
     # Title
-    pdf.set_font('NotoArabic', '', 16)
-    pdf.cell(0, 10, 'تقرير القيادة الذكية', 0, 1, 'C')
+    if font_added:
+        pdf.set_font('NotoArabic', '', 16)
+        pdf.cell(0, 10, 'تقرير القيادة الذكية', 0, 1, 'C')
     pdf.set_font('Arial', '', 16)
     pdf.cell(0, 10, 'SmartDrive Report', 0, 1, 'C')
     pdf.ln(10)
     
     # Data
-    pdf.set_font('NotoArabic', '', 12)
-    pdf.cell(0, 10, f'السرعة: {values[0]} كم/ساعة', 0, 1)
-    pdf.cell(0, 10, f'التركيز: {values[1]}%', 0, 1)
+    if font_added:
+        pdf.set_font('NotoArabic', '', 12)
+        pdf.cell(0, 10, f'السرعة: {values[0]} كم/ساعة', 0, 1)
+        pdf.cell(0, 10, f'التركيز: {values[1]}%', 0, 1)
     
     pdf.set_font('Arial', '', 12)
     pdf.cell(0, 10, f'Speed: {values[0]} km/h', 0, 1)
@@ -99,17 +123,19 @@ def generate_pdf(chart_path, values, overall_score):
     
     # Tips
     tip_ar, tip_en = generate_driving_tip(overall_score)
-    pdf.set_font('NotoArabic', '', 12)
-    pdf.multi_cell(0, 8, tip_ar)
-    pdf.ln(5)
+    if font_added:
+        pdf.set_font('NotoArabic', '', 12)
+        pdf.multi_cell(0, 8, tip_ar)
+        pdf.ln(5)
     pdf.set_font('Arial', '', 12)
     pdf.multi_cell(0, 8, tip_en)
     pdf.ln(10)
     
     # Footer note
     pdf.set_text_color(128, 128, 128)
-    pdf.set_font('NotoArabic', '', 10)
-    pdf.cell(0, 10, 'هذا نموذج أولي يعتمد على بيانات عشوائية', 0, 1, 'C')
+    if font_added:
+        pdf.set_font('NotoArabic', '', 10)
+        pdf.cell(0, 10, 'هذا نموذج أولي يعتمد على بيانات عشوائية', 0, 1, 'C')
     pdf.set_font('Arial', '', 10)
     pdf.cell(0, 10, 'This is a prototype using random data', 0, 1, 'C')
     
@@ -145,9 +171,8 @@ def main():
     st.set_page_config(page_title="تقرير القيادة الذكية", layout="centered")
     
     # Download Arabic font if not exists
-    if not os.path.exists('NotoKufiArabic-Regular.ttf'):
-        st.warning("جارٍ تحميل الخطوط...")
-        os.system('wget -O NotoKufiArabic-Regular.ttf https://fonts.google.com/download?family=Noto%20Kufi%20Arabic')
+    if not download_font():
+        st.warning("قد لا تظهر النصوص العربية بشكل صحيح بدون الخط المطلوب")
     
     st.title("🚗 تقرير القيادة الذكية / SmartDrive Report")
     

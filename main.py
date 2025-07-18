@@ -10,8 +10,8 @@ import numpy as np
 from matplotlib.patches import Circle
 
 # إعدادات الإيميل
-SENDER_EMAIL = "smartdrive.report@gmail.com"
-APP_PASSWORD = "owjj okgp ljbl gztg"  # استبدلها بكلمة المرور الفعلية
+SENDER_EMAIL = st.secrets["EMAIL"]
+APP_PASSWORD = st.secrets["APP_PASSWORD"]
 
 def create_chart(values):
     categories = ['Speed', 'Focus', 'Calmness', 'Aggression', 'Distraction']
